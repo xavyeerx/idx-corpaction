@@ -1,0 +1,45 @@
+# Pemetaan keyword -> kategori aksi korporasi (PRD bagian 5)
+# Urutan kategori di bawah ini menentukan prioritas saat satu subject match lebih dari satu kategori.
+# Pencocokan dilakukan case-insensitive terhadap field subject/judul pengumuman.
+
+categories:
+  - name: RIGHT_ISSUE
+    label: "RIGHT ISSUE ALERT"
+    emoji: "🚨"
+    keywords:
+      - "Penambahan Modal"
+      - "HMETD"
+      - "PMHMETD"
+      - "Penawaran Umum Terbatas"
+      - "Rights Issue"
+
+  - name: PRIVATE_PLACEMENT
+    label: "PRIVATE PLACEMENT ALERT"
+    emoji: "💰"
+    keywords:
+      - "Penambahan Modal Tanpa HMETD"
+      - "PMTHMETD"
+      - "Private Placement"
+
+  - name: STOCK_SPLIT
+    label: "STOCK SPLIT ALERT"
+    emoji: "✂️"
+    keywords:
+      - "Pemecahan Nilai Nominal Saham"
+      - "Stock Split"
+      - "Penggabungan Nilai Nominal Saham"
+
+  - name: DIVIDEN
+    label: "DIVIDEN ALERT"
+    emoji: "💵"
+    keywords:
+      - "Pembagian Dividen"
+      - "Dividen Interim"
+      - "Dividen Spesial"
+
+  - name: INSIDER_OWNERSHIP
+    label: "INSIDER OWNERSHIP ALERT"
+    emoji: "👤"
+    keywords:
+      - "Laporan Kepemilikan Saham"
+      - "Perubahan Kepemilikan Saham"

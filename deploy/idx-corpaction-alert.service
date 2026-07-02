@@ -1,0 +1,19 @@
+[Unit]
+Description=IDX Corporate Action Announcement Alert Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=deploy
+WorkingDirectory=/opt/idx-corpaction
+EnvironmentFile=/opt/idx-corpaction/.env
+ExecStart=/opt/idx-corpaction/venv/bin/python /opt/idx-corpaction/main.py
+Restart=always
+RestartSec=10
+
+# Service ini berjalan independen dari cron bot broksum (PRD bagian 8),
+# tidak berbagi jadwal maupun proses.
+
+[Install]
+WantedBy=multi-user.target

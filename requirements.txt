@@ -1,0 +1,5 @@
+requests>=2.31.0
+cloudscraper>=1.2.71
+python-dotenv>=1.0.0
+PyYAML>=6.0
+pytz>=2024.1
