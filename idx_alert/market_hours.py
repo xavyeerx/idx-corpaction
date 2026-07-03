@@ -1,7 +1,7 @@
 """Penentuan status jam bursa dan jadwal pre-open catch-up (PRD bagian 4, + pre-open alert)."""
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytz
 
@@ -35,3 +35,17 @@ def is_pre_open_check_time(settings: Settings, dt: datetime | None = None) -> bo
     if not is_trading_day(dt):
         return False
     return dt.time() >= settings.pre_open_check_time and dt.time() < settings.market_open_time
+
+
+def last_trading_day_str(dt: datetime | None = None) -> str:
+    """Tanggal (YYYYMMDD) hari bursa sebelumnya, melompati weekend.
+
+    Dipakai sebagai dateFrom untuk pre-open catch-up, supaya pengumuman yang
+    terbit setelah market close hari bursa sebelumnya (termasuk yang terbit
+    Jumat sore sebelum weekend) tetap tertangkap saat catch-up Senin pagi.
+    """
+    dt = dt or now_wib()
+    prev = dt - timedelta(days=1)
+    while prev.weekday() not in _TRADING_WEEKDAYS:
+        prev -= timedelta(days=1)
+    return prev.strftime("%Y%m%d")

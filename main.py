@@ -15,7 +15,12 @@ import time
 from idx_alert.config import load_settings
 from idx_alert.dedup import Deduplicator
 from idx_alert.logger import setup_logger
-from idx_alert.market_hours import is_market_open, is_pre_open_check_time, now_wib
+from idx_alert.market_hours import (
+    is_market_open,
+    is_pre_open_check_time,
+    last_trading_day_str,
+    now_wib,
+)
 from idx_alert.notifier import TelegramNotifier
 from idx_alert.pipeline import run_once
 
@@ -35,15 +40,24 @@ def main() -> None:
     current_backoff = settings.poll_interval_seconds
     admin_warned = False
     last_pre_open_check_date = None
+    last_market_cycle_date = None
 
     while True:
         try:
             now = now_wib()
 
             if is_market_open(settings, now):
-                sent = run_once(settings, dedup, notifier, logger)
+                # Siklus pertama hari ini (mis. baru nyalakan laptop siang hari) pakai
+                # rentang lebar dari hari bursa sebelumnya, supaya pengumuman yang terbit
+                # sebelum proses mulai jalan tetap tertangkap, bukan cuma yang baru terbit
+                # setelah start. Siklus berikutnya cukup query hari ini saja.
+                is_first_cycle_today = last_market_cycle_date != now.date()
+                date_from = last_trading_day_str(now) if is_first_cycle_today else None
+
+                sent = run_once(settings, dedup, notifier, logger, date_from=date_from)
                 if sent:
                     logger.info("%d alert baru terkirim pada siklus ini.", sent)
+                last_market_cycle_date = now.date()
 
                 consecutive_failures = 0
                 current_backoff = settings.poll_interval_seconds
@@ -53,7 +67,7 @@ def main() -> None:
 
             if is_pre_open_check_time(settings, now) and last_pre_open_check_date != now.date():
                 logger.info("Menjalankan pre-open catch-up check sebelum market open.")
-                sent = run_once(settings, dedup, notifier, logger)
+                sent = run_once(settings, dedup, notifier, logger, date_from=last_trading_day_str(now))
                 logger.info("Pre-open catch-up selesai, %d alert terkirim.", sent)
                 last_pre_open_check_date = now.date()
                 time.sleep(_PRE_OPEN_COOLDOWN_SECONDS)

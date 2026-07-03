@@ -17,9 +17,15 @@ def run_once(
     dedup: Deduplicator,
     notifier: TelegramNotifier,
     logger: logging.Logger,
+    date_from: str | None = None,
 ) -> int:
-    """Satu siklus fetch+proses. Return jumlah alert baru yang terkirim."""
-    announcements = fetch_announcements(settings, logger)
+    """Satu siklus fetch+proses. Return jumlah alert baru yang terkirim.
+
+    date_from (YYYYMMDD) opsional untuk memperlebar rentang pencarian, dipakai saat
+    pre-open catch-up supaya pengumuman yang terbit setelah market close kemarin
+    (atau selama weekend/libur) tetap tertangkap, bukan cuma tanggal hari ini.
+    """
+    announcements = fetch_announcements(settings, logger, date_from=date_from)
     logger.debug("Fetch mengembalikan %d entri pengumuman", len(announcements))
 
     sent_count = 0

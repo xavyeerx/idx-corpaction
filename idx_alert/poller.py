@@ -49,14 +49,14 @@ def _primary_document_url(attachments: list[dict]) -> str:
     return ""
 
 
-def _fetch_for_keyword(settings: Settings, keyword: str, date_str: str) -> list[dict]:
+def _fetch_for_keyword(settings: Settings, keyword: str, date_from: str, date_to: str) -> list[dict]:
     params = {
         "kodeEmiten": "",
         "emitenType": "*",
         "indexFrom": 0,
         "pageSize": settings.poll_page_size,
-        "dateFrom": date_str,
-        "dateTo": date_str,
+        "dateFrom": date_from,
+        "dateTo": date_to,
         "lang": "id",
         "keyword": keyword,
     }
@@ -71,15 +71,22 @@ def _fetch_for_keyword(settings: Settings, keyword: str, date_str: str) -> list[
     return payload.get("Replies", [])
 
 
-def fetch_announcements(settings: Settings, logger: logging.Logger) -> list[Announcement]:
+def fetch_announcements(
+    settings: Settings, logger: logging.Logger, date_from: str | None = None
+) -> list[Announcement]:
     """Jalankan satu siklus polling: satu request per kategori keyword, gabungkan hasil.
 
     Mengambil hanya keyword pertama tiap kategori sebagai representasi kategori itu,
     karena tujuan endpoint adalah menemukan entri yang match kategori, bukan expand
     ke seluruh sinonim di request terpisah (sinonim lain tetap dicek ulang saat
     pencocokan kategori di filter.py terhadap subject hasil).
+
+    date_from (format YYYYMMDD) menentukan awal rentang pencarian; default hari ini.
+    Dedup di pipeline yang mencegah re-alert, jadi rentang yang lebih lebar aman dipakai
+    untuk menangkap pengumuman yang terbit saat sistem tidak jalan (mis. semalam/weekend).
     """
-    date_str = datetime.now(WIB).strftime("%Y%m%d")
+    date_to = datetime.now(WIB).strftime("%Y%m%d")
+    date_from = date_from or date_to
 
     seen_ids: set[str] = set()
     announcements: list[Announcement] = []
@@ -87,7 +94,7 @@ def fetch_announcements(settings: Settings, logger: logging.Logger) -> list[Anno
     for category in settings.categories:
         keyword = category.keywords[0]
         try:
-            replies = _fetch_for_keyword(settings, keyword, date_str)
+            replies = _fetch_for_keyword(settings, keyword, date_from, date_to)
         except (requests.RequestException, cloudscraper.exceptions.CloudflareException, PollerError) as exc:
             logger.error("Fetch gagal untuk kategori %s (keyword=%r): %s", category.name, keyword, exc)
             continue
