@@ -10,6 +10,7 @@ lalu hasilnya digabung sebelum diproses filter+dedup di pipeline.
 from __future__ import annotations
 
 import logging
+import time
 from datetime import datetime
 
 import cloudscraper
@@ -91,7 +92,10 @@ def fetch_announcements(
     seen_ids: set[str] = set()
     announcements: list[Announcement] = []
 
-    for category in settings.categories:
+    for i, category in enumerate(settings.categories):
+        if i > 0:
+            time.sleep(2)  # jeda antar-request kategori, kurangi risiko 503 dari rate limit IDX
+
         keyword = category.keywords[0]
         try:
             replies = _fetch_for_keyword(settings, keyword, date_from, date_to)
@@ -118,8 +122,9 @@ def fetch_announcements(
                 continue
 
             document_url = _primary_document_url(attachments)
+            source_id = str(pengumuman.get("Id2", "")).strip()
 
-            ann = Announcement(emiten, subject, published_at, document_url)
+            ann = Announcement(emiten, subject, published_at, document_url, source_id=source_id)
             if ann.unique_id in seen_ids:
                 continue
             seen_ids.add(ann.unique_id)
